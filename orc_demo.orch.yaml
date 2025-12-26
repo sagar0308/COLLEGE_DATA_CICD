@@ -1,0 +1,220 @@
+type: "orchestration"
+version: "1.0"
+pipeline:
+  components:
+    Start:
+      type: "start"
+      transitions:
+        unconditional:
+        - "Create Table"
+      parameters:
+        componentName: "Start"
+    Create Table:
+      type: "create-table-v2"
+      transitions:
+        success:
+        - "File Iterator"
+      parameters:
+        componentName: "Create Table"
+        createMethod: "Replace"
+        database: "DEMO_DATABASE"
+        schema: "DEMO_SCHEMA"
+        table: "DEMO_TXNS"
+        snowflakeTableType: "Permanent"
+        columns:
+        - - "TRANS_ID"
+          - "NUMBER"
+          - ""
+          - ""
+          - ""
+          - "No"
+          - "No"
+          - ""
+          - ""
+        - - "ACCOUNT_ID"
+          - "NUMBER"
+          - ""
+          - ""
+          - ""
+          - "No"
+          - "No"
+          - ""
+          - ""
+        - - "DATE"
+          - "DATE"
+          - ""
+          - ""
+          - ""
+          - "No"
+          - "No"
+          - ""
+          - ""
+        - - "TYPE"
+          - "VARCHAR"
+          - "30"
+          - ""
+          - ""
+          - "No"
+          - "No"
+          - ""
+          - ""
+        - - "OPERATION"
+          - "VARCHAR"
+          - "40"
+          - ""
+          - ""
+          - "No"
+          - "No"
+          - ""
+          - ""
+        - - "AMOUNT"
+          - "NUMBER"
+          - ""
+          - ""
+          - ""
+          - "No"
+          - "No"
+          - ""
+          - ""
+        - - "BALANCE"
+          - "FLOAT"
+          - ""
+          - ""
+          - ""
+          - "No"
+          - "No"
+          - ""
+          - ""
+        - - "PURPOSE"
+          - "VARCHAR"
+          - "40"
+          - ""
+          - ""
+          - "No"
+          - "No"
+          - ""
+          - ""
+        - - "BANK"
+          - "VARCHAR"
+          - "45"
+          - ""
+          - ""
+          - "No"
+          - "No"
+          - ""
+          - ""
+        - - "ACCOUNT"
+          - "NUMBER"
+          - ""
+          - ""
+          - ""
+          - "No"
+          - "No"
+          - ""
+          - ""
+        defaultDdlCollation:
+        primaryKeys:
+        clusteringKeys:
+        dataRetentionTimeInDays:
+        comment:
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    S3 Load:
+      type: "s3-load"
+      parameters:
+        componentName: "S3 Load"
+        stage: "[Custom]"
+        authentication: "Credentials"
+        encryption: "None"
+        format: "[Custom]"
+        fileType: "CSV"
+        compression: "AUTO"
+        recordDelimiter:
+        skipBlankLines: "False"
+        dateFormat:
+        timeFormat:
+        timestampFormat:
+        escape:
+        escapeUnenclosedField:
+        trimSpace: "False"
+        fieldOptionallyEnclosed:
+        nullIf:
+        errorOnColumnCountMismatch: "False"
+        emptyFieldAsNull: "True"
+        replaceInvalidCharacters: "False"
+        encodingType:
+        onError: "Abort Statement"
+        sizeLimitB:
+        purgeFiles: "False"
+        truncateColumns: "False"
+        forceLoad: "False"
+        warehouse: "COMPUTE_WH"
+        database: "DEMO_DATABASE"
+        schema: "DEMO_SCHEMA"
+        targetTable: "DEMO_TXNS"
+        loadColumns:
+        - "TRANS_ID"
+        - "ACCOUNT_ID"
+        - "DATE"
+        - "TYPE"
+        - "OPERATION"
+        - "AMOUNT"
+        - "BALANCE"
+        - "PURPOSE"
+        - "BANK"
+        - "ACCOUNT"
+        fieldDelimiter: ","
+        skipHeader: "1"
+        s3ObjectPrefix: "s3://sagar-matillion-data/CZEC_Bank/TXNS"
+        pattern: ".*\\.csv"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    File Iterator:
+      type: "file-iterator"
+      iterationTarget: "S3 Load"
+      parameters:
+        componentName: "File Iterator"
+        inputDataType: "S3"
+        maxIterations:
+        filterRegex: ".*\\.csv"
+        concurrency: "Sequential"
+        variables:
+        - - "FILE_NAME"
+          - "Filename"
+        breakOnFailure: "No"
+        inputDataUrl1: "s3://sagar-matillion-data/CZEC_Bank/TXNS"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+  variables:
+    FILE_NAME:
+      metadata:
+        type: "TEXT"
+        description: ""
+        scope: "SHARED"
+        visibility: "PUBLIC"
+      defaultValue: "trnx_16.csv"
+design:
+  components:
+    Start:
+      position:
+        x: 0
+        "y": 0
+      tempMetlId: 1
+    Create Table:
+      position:
+        x: 160
+        "y": 0
+      tempMetlId: 2
+    S3 Load:
+      position:
+        x: 320
+        "y": 0
+      tempMetlId: 3
+    File Iterator:
+      position:
+        x: 320
+        "y": -20
+      tempMetlId: 4

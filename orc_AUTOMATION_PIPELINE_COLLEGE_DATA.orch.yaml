@@ -1,0 +1,163 @@
+type: "orchestration"
+version: "1.0"
+pipeline:
+  components:
+    Start:
+      type: "start"
+      transitions:
+        unconditional:
+        - "Run Orchestration orc_JSON_FILE_LOAD"
+        - "Run Transformation tra_CREATE_SHEET_NAMES"
+      parameters:
+        componentName: "Start"
+    Excel Query:
+      type: "excel-query"
+      parameters:
+        componentName: "Excel Query"
+        basicAdvancedMode: "Advanced"
+        storageType: "Amazon S3 Storage"
+        storageUrl: "s3://sagar-matillion-data/CZEC_Bank/TXNS/student_schema.xlsx"
+        containsHeaderRow: "Yes"
+        connectionOptions:
+        type: "Standard"
+        primaryKeys:
+        warehouse: "COMPUTE_WH"
+        database: "PRACTICE"
+        schema: "PRACTICE_SCHEMA"
+        targetTable: "GW_${WORKSHEET_NAME}"
+        stage: "[Custom]"
+        stagePlatform: "Snowflake Managed"
+        loadOptions:
+        autoDebug: "Off"
+        sqlQuery: "SELECT * FROM ${WORKSHEET_NAME}"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    Table Iterator:
+      type: "table-iterator"
+      transitions:
+        success:
+        - "WAIT UNTIL ALL THE PROCESSES COMPLETE"
+      iterationTarget: "Excel Query"
+      parameters:
+        componentName: "Table Iterator"
+        mode: "Basic"
+        database: "PRACTICE"
+        schema: "PRACTICE_SCHEMA"
+        targetTable: "GW_COLLEGE_TABLE"
+        concurrency: "Sequential"
+        columnMapping:
+        - - "COLLEGE_DATA"
+          - "WORKSHEET_NAME"
+        orderBy:
+        sort: "Ascending"
+        breakOnFailure: "No"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    WAIT UNTIL ALL THE PROCESSES COMPLETE:
+      type: "and"
+      transitions:
+        unconditional:
+        - "Run Transformation tra_COLLEGE_DATA_TRANS_PIPELINE"
+      parameters:
+        componentName: "WAIT UNTIL ALL THE PROCESSES COMPLETE"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    End Success:
+      type: "end-success"
+      parameters:
+        componentName: "End Success"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    Run Orchestration orc_JSON_FILE_LOAD:
+      type: "run-orchestration"
+      transitions:
+        success:
+        - "WAIT UNTIL ALL THE PROCESSES COMPLETE"
+      parameters:
+        componentName: "Run Orchestration orc_JSON_FILE_LOAD"
+        orchestrationJob: "orc_JSON_FILE_LOAD.orch.yaml"
+        setScalarVariables:
+        setGridVariables:
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    Run Transformation tra_CREATE_SHEET_NAMES:
+      type: "run-transformation"
+      transitions:
+        success:
+        - "Table Iterator"
+      parameters:
+        componentName: "Run Transformation tra_CREATE_SHEET_NAMES"
+        transformationJob: "tra_CREATE_SHEET_NAMES.tran.yaml"
+        setScalarVariables:
+        setGridVariables:
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    Run Transformation tra_COLLEGE_DATA_TRANS_PIPELINE:
+      type: "run-transformation"
+      transitions:
+        success:
+        - "End Success"
+      parameters:
+        componentName: "Run Transformation tra_COLLEGE_DATA_TRANS_PIPELINE"
+        transformationJob: "tra_COLLEGE_DATA_TRANS_PIPELINE.tran.yaml"
+        setScalarVariables:
+        setGridVariables:
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+  variables:
+    WORKSHEET_NAME:
+      metadata:
+        type: "TEXT"
+        description: ""
+        scope: "COPIED"
+        visibility: "PUBLIC"
+      defaultValue: "STUDENTS"
+design:
+  components:
+    Start:
+      position:
+        x: 0
+        "y": -20
+      tempMetlId: 1
+    Excel Query:
+      position:
+        x: 310
+        "y": 30
+      tempMetlId: 3
+    Table Iterator:
+      position:
+        x: 310
+        "y": 30
+      tempMetlId: 4
+    WAIT UNTIL ALL THE PROCESSES COMPLETE:
+      position:
+        x: 550
+        "y": -40
+      tempMetlId: 7
+    End Success:
+      position:
+        x: 880
+        "y": -40
+      tempMetlId: 9
+    Run Orchestration orc_JSON_FILE_LOAD:
+      position:
+        x: 150
+        "y": -80
+      tempMetlId: 6
+    Run Transformation tra_CREATE_SHEET_NAMES:
+      position:
+        x: 140
+        "y": 50
+      tempMetlId: 5
+    Run Transformation tra_COLLEGE_DATA_TRANS_PIPELINE:
+      position:
+        x: 720
+        "y": -40
+      tempMetlId: 8

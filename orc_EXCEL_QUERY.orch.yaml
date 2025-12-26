@@ -1,0 +1,54 @@
+type: "orchestration"
+version: "1.0"
+pipeline:
+  components:
+    Start:
+      type: "start"
+      transitions:
+        unconditional:
+        - "Excel Query"
+      parameters:
+        componentName: "Start"
+    Excel Query:
+      type: "excel-query"
+      parameters:
+        componentName: "Excel Query"
+        basicAdvancedMode: "Basic"
+        storageType: "Amazon S3 Storage"
+        storageUrl: "s3://sagar-matillion-data/CZEC_Bank/TXNS/college_database_sample.xlsx"
+        containsHeaderRow: "Yes"
+        cellRange:
+        connectionOptions:
+        dataSource: "COURSES"
+        dataSelection:
+        - "COURSE_ID"
+        - "COURSE_NAME"
+        - "DEPARTMENT"
+        dataSourceFilter:
+        combineFilters: "And"
+        limit:
+        type: "Standard"
+        primaryKeys:
+        warehouse: "COMPUTE_WH"
+        database: "PRACTICE"
+        schema: "PRACTICE_SCHEMA"
+        targetTable: "AWS_EXCEL_COURSES_DATA"
+        stage: "[Custom]"
+        stagePlatform: "Snowflake Managed"
+        loadOptions:
+        autoDebug: "Off"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+design:
+  components:
+    Start:
+      position:
+        x: 0
+        "y": 0
+      tempMetlId: 1
+    Excel Query:
+      position:
+        x: 160
+        "y": 0
+      tempMetlId: 2

@@ -1,0 +1,43 @@
+type: "transformation"
+version: "1.0"
+pipeline:
+  components:
+    Fixed Flow:
+      type: "fixed-flow"
+      parameters:
+        componentName: "Fixed Flow"
+        columns:
+        - - "COLLEGE_DATA"
+          - "VARCHAR"
+          - ""
+          - ""
+        values:
+        - - "STUDENTS"
+        - - "COURSES"
+        - - "ENROLLMENTS"
+    Rewrite Table:
+      type: "rewrite-table"
+      sources:
+      - "Fixed Flow"
+      parameters:
+        componentName: "Rewrite Table"
+        warehouse: "COMPUTE_WH"
+        database: "PRACTICE"
+        schema: "PRACTICE_SCHEMA"
+        targetTable: "GW_COLLEGE_TABLE"
+        orderBy:
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+design:
+  components:
+    Fixed Flow:
+      position:
+        x: 0
+        "y": 0
+      tempMetlId: 1
+    Rewrite Table:
+      position:
+        x: 160
+        "y": 0
+      tempMetlId: 2

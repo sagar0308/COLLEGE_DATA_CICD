@@ -1,0 +1,309 @@
+type: "transformation"
+version: "1.0"
+pipeline:
+  components:
+    STUDENT_FACT_ENROLL_JSON:
+      type: "table-input"
+      parameters:
+        componentName: "STUDENT_FACT_ENROLL_JSON"
+        database: "PRACTICE"
+        schema: "PRACTICE_SCHEMA"
+        targetTable: "STUDENT_FACT_ENROLL_JSON"
+        columnNames:
+        - "DATA_VALUE"
+        timeOffset:
+    GW_COURSES:
+      type: "table-input"
+      parameters:
+        componentName: "GW_COURSES"
+        database: "PRACTICE"
+        schema: "PRACTICE_SCHEMA"
+        targetTable: "GW_COURSES"
+        columnNames:
+        - "COURSE_ID"
+        - "COURSE_NAME"
+        - "CREDITS"
+        timeOffset:
+    GW_ENROLLMENTS:
+      type: "table-input"
+      parameters:
+        componentName: "GW_ENROLLMENTS"
+        database: "PRACTICE"
+        schema: "PRACTICE_SCHEMA"
+        targetTable: "GW_ENROLLMENTS"
+        columnNames:
+        - "ENROLLMENT_ID"
+        - "STUDENT_ID"
+        - "COURSE_ID"
+        - "SEMESTER"
+        timeOffset:
+    GW_STUDENTS:
+      type: "table-input"
+      parameters:
+        componentName: "GW_STUDENTS"
+        database: "PRACTICE"
+        schema: "PRACTICE_SCHEMA"
+        targetTable: "GW_STUDENTS"
+        columnNames:
+        - "STUDENT_ID"
+        - "STUDENT_NAME"
+        - "DEPARTMENT"
+        timeOffset:
+    Convert Type GW_COURSES:
+      type: "convert-type"
+      sources:
+      - "GW_COURSES"
+      parameters:
+        componentName: "Convert Type GW_COURSES"
+        conversions:
+        - - "COURSE_ID"
+          - "NUMBER"
+          - ""
+          - ""
+        - - "CREDITS"
+          - "NUMBER"
+          - ""
+          - ""
+    Convert Type GW_ENROLLMENT:
+      type: "convert-type"
+      sources:
+      - "GW_ENROLLMENTS"
+      parameters:
+        componentName: "Convert Type GW_ENROLLMENT"
+        conversions:
+        - - "ENROLLMENT_ID"
+          - "NUMBER"
+          - ""
+          - ""
+        - - "STUDENT_ID"
+          - "NUMBER"
+          - ""
+          - ""
+        - - "COURSE_ID"
+          - "NUMBER"
+          - ""
+          - ""
+    Convert Type GW_STUDENTS:
+      type: "convert-type"
+      sources:
+      - "GW_STUDENTS"
+      parameters:
+        componentName: "Convert Type GW_STUDENTS"
+        conversions:
+        - - "STUDENT_ID"
+          - "NUMBER"
+          - ""
+          - ""
+    Join:
+      type: "join"
+      sources:
+      - "Convert Type GW_COURSES"
+      - "Convert Type GW_ENROLLMENT"
+      - "Convert Type GW_STUDENTS"
+      parameters:
+        componentName: "Join"
+        mainTable: "Convert Type GW_ENROLLMENT"
+        mainTableAlias: "E"
+        joins:
+        - - "Convert Type GW_COURSES"
+          - "C"
+          - "Inner"
+        - - "Convert Type GW_STUDENTS"
+          - "S"
+          - "Inner"
+        joinExpressions:
+        - - "\"E\".\"COURSE_ID\" = \"C\".\"COURSE_ID\""
+          - "E_Inner_C"
+        - - "\"E\".\"STUDENT_ID\" = \"S\".\"STUDENT_ID\""
+          - "E_Inner_S"
+        columnMappings:
+        - - "S.STUDENT_ID"
+          - "STUDENT_ID"
+        - - "S.STUDENT_NAME"
+          - "STUDENT_NAME"
+        - - "C.COURSE_ID"
+          - "COURSE_ID"
+        - - "C.COURSE_NAME"
+          - "COURSE_NAME"
+    Extract Nested Data STUDENT_FACT_JSON:
+      type: "extract-nested-data-sf"
+      sources:
+      - "STUDENT_FACT_ENROLL_JSON"
+      parameters:
+        componentName: "Extract Nested Data STUDENT_FACT_JSON"
+        includeInputColumns: "No"
+        columns:
+        - name: "data"
+          datatype: "VARIANT"
+          size: "0"
+          decimalPlaces: "0"
+          columnName: "DATA_VALUE"
+          aliasName: "data"
+          isArray: "true"
+          include: "false"
+          childElements:
+          - name: "data-element"
+            datatype: "VARIANT"
+            size: "0"
+            decimalPlaces: "0"
+            columnName: "DATA_VALUE"
+            aliasName: "data-element"
+            isArray: "false"
+            include: "false"
+            childElements:
+            - name: "student_id"
+              datatype: "NUMBER"
+              size: "0"
+              decimalPlaces: "0"
+              columnName: "DATA_VALUE"
+              aliasName: "student_id"
+              isArray: "false"
+              include: "true"
+            - name: "course_id"
+              datatype: "NUMBER"
+              size: "0"
+              decimalPlaces: "0"
+              columnName: "DATA_VALUE"
+              aliasName: "course_id"
+              isArray: "false"
+              include: "true"
+        outerJoin: "No"
+        inputAlias: "i"
+        arrayPrefix: "f"
+        castingMethod: "Fail on invalid data"
+        caseColumnAliasNames: "No"
+    Join 2:
+      type: "join"
+      sources:
+      - "Convert Type GW_COURSES"
+      - "Convert Type GW_ENROLLMENT"
+      parameters:
+        componentName: "Join 2"
+        mainTable: "Convert Type GW_ENROLLMENT"
+        mainTableAlias: "E"
+        joins:
+        - - "Convert Type GW_COURSES"
+          - "C"
+          - "Inner"
+        joinExpressions:
+        - - "\"E\".\"COURSE_ID\" = \"C\".\"COURSE_ID\""
+          - "E_Inner_C"
+        - - "\"E\".\"STUDENT_ID\" = \"S\".\"STUDENT_ID\""
+          - "E_Inner_S"
+        columnMappings:
+        - - "E.ENROLLMENT_ID"
+          - "ENROLLMENT_ID"
+        - - "C.COURSE_ID"
+          - "COURSE_ID"
+        - - "C.COURSE_NAME"
+          - "COURSE_NAME"
+        - - "E.STUDENT_ID"
+          - "STUDENT_ID"
+    Rename:
+      type: "rename"
+      sources:
+      - "Aggregate CALCULATE TOT_ENRO PER COURSE"
+      parameters:
+        componentName: "Rename"
+        columnMapping:
+        - - "COURSE_NAME"
+          - "COURSE_NAME"
+        - - "count_ENROLLMENT_ID"
+          - "TOT_ENROLLMENT"
+        includeInputColumns: "No"
+    Aggregate CALCULATE TOT_ENRO PER COURSE:
+      type: "aggregate"
+      sources:
+      - "Join 2"
+      parameters:
+        componentName: "Aggregate CALCULATE TOT_ENRO PER COURSE"
+        groupings:
+        - "COURSE_ID"
+        - "COURSE_NAME"
+        aggregations:
+        - - "ENROLLMENT_ID"
+          - "Count"
+        groupingType: "Group By"
+    Rewrite Table:
+      type: "rewrite-table"
+      sources:
+      - "Rename"
+      parameters:
+        componentName: "Rewrite Table"
+        warehouse: "COMPUTE_WH"
+        database: "PRACTICE"
+        schema: "PRACTICE_SCHEMA"
+        targetTable: "KPI_TOT_ENROLL_PER_COURSE"
+        orderBy:
+        - - "TOT_ENROLLMENT"
+          - "DESCENDING"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+design:
+  components:
+    STUDENT_FACT_ENROLL_JSON:
+      position:
+        x: -10
+        "y": 0
+      tempMetlId: 1
+    GW_COURSES:
+      position:
+        x: -10
+        "y": 120
+      tempMetlId: 2
+    GW_ENROLLMENTS:
+      position:
+        x: -10
+        "y": 230
+      tempMetlId: 3
+    GW_STUDENTS:
+      position:
+        x: -20
+        "y": 350
+      tempMetlId: 4
+    Convert Type GW_COURSES:
+      position:
+        x: 150
+        "y": 120
+      tempMetlId: 6
+    Convert Type GW_ENROLLMENT:
+      position:
+        x: 150
+        "y": 230
+      tempMetlId: 7
+    Convert Type GW_STUDENTS:
+      position:
+        x: 150
+        "y": 350
+      tempMetlId: 8
+    Join:
+      position:
+        x: 450
+        "y": 70
+      tempMetlId: 9
+    Extract Nested Data STUDENT_FACT_JSON:
+      position:
+        x: 150
+        "y": 0
+      tempMetlId: 5
+    Join 2:
+      position:
+        x: 460
+        "y": 210
+      tempMetlId: 10
+    Rename:
+      position:
+        x: 780
+        "y": 210
+      tempMetlId: 12
+    Aggregate CALCULATE TOT_ENRO PER COURSE:
+      position:
+        x: 620
+        "y": 210
+      tempMetlId: 11
+    Rewrite Table:
+      position:
+        x: 940
+        "y": 210
+      tempMetlId: 13

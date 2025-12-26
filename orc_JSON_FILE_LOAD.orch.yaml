@@ -1,0 +1,92 @@
+type: "orchestration"
+version: "1.0"
+pipeline:
+  components:
+    Start:
+      type: "start"
+      transitions:
+        unconditional:
+        - "Create Table"
+      parameters:
+        componentName: "Start"
+    Create Table:
+      type: "create-table-v2"
+      transitions:
+        success:
+        - "S3 Load"
+      parameters:
+        componentName: "Create Table"
+        createMethod: "Replace"
+        database: "PRACTICE"
+        schema: "PRACTICE_SCHEMA"
+        table: "STUDENT_FACT_ENROLL_JSON"
+        snowflakeTableType: "Permanent"
+        columns:
+        - - "DATA_VALUE"
+          - "VARIANT"
+          - ""
+          - ""
+          - ""
+          - "No"
+          - "No"
+          - ""
+          - ""
+        defaultDdlCollation:
+        primaryKeys:
+        clusteringKeys:
+        dataRetentionTimeInDays:
+        comment:
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    S3 Load:
+      type: "s3-load"
+      parameters:
+        componentName: "S3 Load"
+        stage: "[Custom]"
+        authentication: "Credentials"
+        s3ObjectPrefix: "s3://sagar-matillion-data/CZEC_Bank/TXNS/student_fact_enrollment.json"
+        pattern: ".*"
+        encryption: "None"
+        warehouse: "[Environment Default]"
+        database: "PRACTICE"
+        schema: "PRACTICE_SCHEMA"
+        targetTable: "STUDENT_FACT_ENROLL_JSON"
+        loadColumns:
+        - "DATA_VALUE"
+        format: "[Custom]"
+        fileType: "JSON"
+        compression: "AUTO"
+        onError: "Abort Statement"
+        sizeLimitB:
+        purgeFiles: "False"
+        truncateColumns: "False"
+        forceLoad: "False"
+        enableOctal: "False"
+        allowDuplicates: "False"
+        stripOuterArray: "False"
+        stripNullValues: "False"
+        ignoreUtf8Errors: "False"
+        nullIf1:
+        trimSpace1: "False"
+        matchByColumnName: "None"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+design:
+  components:
+    Start:
+      position:
+        x: 0
+        "y": 0
+      tempMetlId: 1
+    Create Table:
+      position:
+        x: 160
+        "y": 0
+      tempMetlId: 2
+    S3 Load:
+      position:
+        x: 320
+        "y": 0
+      tempMetlId: 3
